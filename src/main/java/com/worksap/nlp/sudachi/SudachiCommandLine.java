@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.List;
 
 /**
  * A command-line morphological analysis tool.
  */
 public class SudachiCommandLine {
 
-    static void run(Tokenizer tokenizer, Tokenizer.SplitMode mode,
+    static void run(Tokenizer tokenizer, boolean skipComment, Tokenizer.SplitMode mode, boolean printSubMorpheme,
                     InputStream input, PrintStream output, boolean printAll)
         throws IOException {
 
@@ -39,28 +40,72 @@ public class SudachiCommandLine {
                 String line = reader.readLine();
                 if (line == null) {
                     break;
+                } else if (skipComment && line.startsWith("#")) {
+                    output.println(line);
+                    continue;
                 }
                 for (Morpheme m : tokenizer.tokenize(mode, line)) {
-                    output.print(m.surface());
-                    output.print("\t");
-                    output.print(String.join(",", m.partOfSpeech()));
-                    output.print("\t");
-                    output.print(m.normalizedForm());
-                    if (printAll) {
-                        output.print("\t");
-                        output.print(m.dictionaryForm());
-                        output.print("\t");
-                        output.print(m.readingForm());
-                        output.print("\t");
-                        output.print(m.getDictionaryId());
-                        if (m.isOOV()) {
-                            output.print("\t");
-                            output.print("(OOV)");
-                        }
+                    switch (mode) {
+                    case A:
+                        printMorpheme(m, mode, output, printAll);
+                        break;
+                    case B:
+                        printMorphemeB(m, mode, printSubMorpheme, output, printAll, "");
+                        break;
+                    case C:
+                        printMorphemeC(m, mode, printSubMorpheme, output, printAll);
+                        break;
                     }
-                    output.println();
                 }
                 output.println("EOS");
+            }
+        }
+    }
+
+    private static void printMorpheme(Morpheme m, Tokenizer.SplitMode mode,
+                    PrintStream output, boolean printAll) {
+        output.print(m.surface());
+        output.print("\t");
+        output.print(String.join(",", m.partOfSpeech()));
+        output.print("\t");
+        output.print(m.normalizedForm());
+        if (printAll) {
+            output.print("\t");
+            output.print(m.dictionaryForm());
+            output.print("\t");
+            output.print(m.readingForm());
+            output.print("\t");
+            output.print(m.getDictionaryId());
+            if (m.isOOV()) {
+                output.print("\t");
+                output.print("(OOV)");
+            }
+        }
+        output.println();
+    }
+
+    private static void printMorphemeB(Morpheme m, Tokenizer.SplitMode mode, boolean printSubMorpheme,
+                    PrintStream output, boolean printAll, String prefix) {
+        List<Morpheme> list = m.split(Tokenizer.SplitMode.A);
+        output.print(prefix);
+        printMorpheme(m, mode, output, printAll);
+        if (list.size() > 1) {
+            for (Morpheme subMorpheme : list) {
+                output.print("@A ");
+                printMorpheme(subMorpheme, mode, output, printAll);
+            }
+        }
+    }
+
+    private static void printMorphemeC(Morpheme m, Tokenizer.SplitMode mode, boolean printSubMorpheme,
+                    PrintStream output, boolean printAll) {
+        List<Morpheme> list = m.split(Tokenizer.SplitMode.B);
+        if (list.size() == 1) {
+            printMorphemeB(m, mode, printSubMorpheme, output, printAll, "");
+        } else {
+            printMorpheme(m, mode, output, printAll);
+            for (Morpheme subMorpheme : list) {
+                printMorphemeB(subMorpheme, mode, printSubMorpheme, output, printAll, "@B ");
             }
         }
     }
@@ -72,7 +117,9 @@ public class SudachiCommandLine {
      * <p>The following are the options.
      * <dl>
      * <dt>{@code -r file}</dt><dd>the settings file in JSON format</dd>
+     * <dt>{@code -c}</dt><dd>skip lines starting with # (just printing them)</dd>
      * <dt>{@code -m {A|B|C}}</dt><dd>the mode of splitting</dd>
+     * <dt>{@code -s}</dt><dd>print sub-word lines starting with @A or @B</dd>
      * <dt>{@code -o file}</dt><dd>the output file</dd>
      * <dt>{@code -a}</dt><dd>print all of the fields</dd>
      * <dt>{@code -d}</dt><dd>print the debug informations</dd>
@@ -89,7 +136,9 @@ public class SudachiCommandLine {
      * @throws IOException if IO is failed
      */
     public static void main(String[] args) throws IOException {
+        boolean skipComment = false;
         Tokenizer.SplitMode mode = Tokenizer.SplitMode.C;
+        boolean printSubMorpheme = false;
         String settings = null;
         PrintStream output = System.out;
         boolean isEnableDump = false;
@@ -101,6 +150,8 @@ public class SudachiCommandLine {
                 try (FileInputStream input = new FileInputStream(args[++i])) {
                     settings = JapaneseDictionary.readAll(input);
                 }
+            } else if (args[i].equals("-c")) {
+            	skipComment = true;
             } else if (args[i].equals("-m") && i + 1 < args.length) {
                 switch (args[++i]) {
                 case "A":
@@ -113,6 +164,8 @@ public class SudachiCommandLine {
                     mode = Tokenizer.SplitMode.C;
                     break;
                 }
+            } else if (args[i].equals("-s")) {
+                printSubMorpheme = true;
             } else if (args[i].equals("-o") && i + 1 < args.length) {
                 output = new PrintStream(args[++i]);
             } else if (args[i].equals("-a")) {
@@ -122,7 +175,9 @@ public class SudachiCommandLine {
             } else if (args[i].equals("-h")) {
                 System.err.println("usage: SudachiCommandLine [-r file] [-m A|B|C] [-o file] [-d] [file ...]");
                 System.err.println("\t-r file\tread settings from file");
+                System.err.println("\t-c\tskip lines starting with # (just printing them)");
                 System.err.println("\t-m mode\tmode of splitting");
+                System.err.println("\t-s\tprint sub-word lines starting with @A or @B");
                 System.err.println("\t-o file\toutput to file");
                 System.err.println("\t-a\tprint all fields");
                 System.err.println("\t-d\tdebug mode");
@@ -141,11 +196,11 @@ public class SudachiCommandLine {
             if (i < args.length) {
                 for ( ; i < args.length; i++) {
                     try (FileInputStream input = new FileInputStream(args[i])) {
-                        run(tokenizer, mode, input, output, printAll);
+                        run(tokenizer, skipComment, mode, printSubMorpheme, input, output, printAll);
                     }
                 }
             } else {
-                run(tokenizer, mode, System.in, output, printAll);
+                run(tokenizer, skipComment, mode, printSubMorpheme, System.in, output, printAll);
             }
         }
         output.close();

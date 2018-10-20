@@ -44,7 +44,9 @@ Add `-Dfile.encoding=UTF-8` to `MAVEN_OPTS`.
 ### Options
 
 - -r conf specifies the setting file
+- -c skip lines starting with # (just printing them)
 - -m {A|B|C} specifies the mode of splitting
+- -s print sub-word lines starting with @A or @B
 - -a outputs the dictionary form and the reading form
 - -d dump the debug outputs
 - -o specifies output file (default: the standard output)
@@ -337,7 +339,9 @@ Sudachi は従来の形態素解析器とくらべ、以下のような特長が
 ### オプション
 
 - -r conf 設定ファイルを指定
+- -c #で始まる行の解析をスキップ（行をそのまま出力）
 - -m {A|B|C} 分割モード
+- -s 分割語の形態素も出力 (@A or @B で開始)
 - -a 読み、辞書形も出力
 - -d デバッグ情報の出力
 - -o 出力ファイル (指定がない場合は標準出力)
