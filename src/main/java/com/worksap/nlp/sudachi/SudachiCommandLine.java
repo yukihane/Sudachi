@@ -45,6 +45,10 @@ public class SudachiCommandLine {
                     continue;
                 }
                 for (Morpheme m : tokenizer.tokenize(mode, line)) {
+                    if (!printSubMorpheme) {
+                        printMorpheme(m, mode, output, printAll);
+                        continue;
+                    }
                     switch (mode) {
                     case A:
                         printMorpheme(m, mode, output, printAll);
