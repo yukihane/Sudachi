@@ -16,7 +16,8 @@
 
 package com.worksap.nlp.sudachi;
 
-import java.io.FileInputStream;
+import com.google.common.io.ByteStreams;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -25,7 +26,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 /**
@@ -49,8 +49,11 @@ public class MMap {
      *             if reading a file is failed
      */
     public static ByteBuffer map(String filename) throws IOException {
-        try (FileInputStream istream = new FileInputStream(filename); FileChannel inputFile = istream.getChannel()) {
-            ByteBuffer buffer = inputFile.map(FileChannel.MapMode.READ_ONLY, 0, inputFile.size());
+        final ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+        try (final BufferedInputStream is = new BufferedInputStream(ccl.getResourceAsStream(filename))) {
+            // Java9以降なら標準APIの InputStream#readAllBytes で代替可能
+            final byte[] ba = ByteStreams.toByteArray(is);
+            final ByteBuffer buffer = ByteBuffer.wrap(ba);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             return buffer;
         }
