@@ -22,6 +22,7 @@
         <include>sudachi*.jar</include>
         <include>javax.json*.jar</include>
         <include>jdartsclone*.jar</include>
+        <include>guava*.jar</include>
       </includes>
     </fileSet>
     <fileSet>
