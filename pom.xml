@@ -179,11 +179,12 @@
             <phase>process-test-resources</phase>
             <configuration>
               <mainClass>${userdictionary.builder}</mainClass>
+              <classpathScope>test</classpathScope>
               <arguments>
                 <argument>-o</argument>
                 <argument>${project.build.testOutputDirectory}/user.dic</argument>
                 <argument>-s</argument>
-                <argument>${project.build.testOutputDirectory}/system.dic</argument>
+                <argument>system.dic</argument>
                 <argument>${test.dict.source.directory}/user.csv</argument>
               </arguments>
             </configuration>
@@ -196,11 +197,12 @@
             <phase>process-test-resources</phase>
             <configuration>
               <mainClass>${userdictionary.builder}</mainClass>
+              <classpathScope>test</classpathScope>
               <arguments>
                 <argument>-o</argument>
                 <argument>${project.build.testOutputDirectory}/user2.dic</argument>
                 <argument>-s</argument>
-                <argument>${project.build.testOutputDirectory}/system.dic</argument>
+                <argument>system.dic</argument>
                 <argument>${test.dict.source.directory}/user2.csv</argument>
               </arguments>
             </configuration>
