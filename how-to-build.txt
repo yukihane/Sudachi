@@ -16,3 +16,8 @@ mvn clean package -DskipTests -Pexecutable-package
 
 echo 'systemDictにファイル名でなくクラスパスからの相対パスでリソース名を指定するように変更したすだちです' | java -jar target/sudachi-*-jar-with-dependencies.jar
 
+# 他のMavenモジュールから参照できるようにローカルMavanリポジトリにインストールします
+
+mvn clean source:jar install -DskipTests
+
+# これを利用したコードサンプル: https://github.com/yukihane/stackoverflow-qa/tree/master/so59707
